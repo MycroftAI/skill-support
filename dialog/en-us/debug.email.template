@@ -1,0 +1,6 @@
+<p>Here's all the info from your device:</p>
+
+<ul><tt>
+<p><b>Device Name:</b> {{device_name}}</p>
+<p><b>Logs:</b> <a href='{{url}}'>{{url}}</a></p>
+</tt></ul>
