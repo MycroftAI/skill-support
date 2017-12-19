@@ -1,14 +1,15 @@
-# Support #
-Creates support tickets and troubleshoots issues
+# Support
+Create support tickets and troubleshoot issues
 
-## Description ##
-This skill will ask the user for a description of any problem they face and send an email containing system info which can be forwarded to our support email. It can also just send debug info.
+## Description
+Generate a package with debugging information and have it sent to your registered account.  This packet can be used for debugging issues yourself or can be sent on to the support team.
 
-## Examples ##
- * "Create a support ticket."
- * "You're not working."
- * "Send me debug info."
+This uses the (termbin.com/)[http://termbin.com/] service for storing the debugging information.
 
-## Credits ##
+## Examples
+ * "Create a support ticket"
+ * "You're not working!"
+ * "Send me debug info"
+
+## Credits
 Mycroft AI
-
