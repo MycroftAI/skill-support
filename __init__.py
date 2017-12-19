@@ -68,8 +68,9 @@ class SupportSkill(MycroftSkill):
             return
 
         # Log so that the message will appear in the package of logs sent
-        self.log.debug("Troubleshooting Package Description: "+str(description))
-        
+        self.log.debug("Troubleshooting Package Description: " +
+                       str(description))
+
         # Upload the logs to the web
         url = self.upload_and_create_url()
 
