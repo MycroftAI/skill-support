@@ -88,14 +88,13 @@ class SupportSkill(MycroftSkill):
     def send_debug_info(self):
         # Upload the logs to the web
         url = self.upload_and_create_url()
-
         # Create the debug email and send to user
         data = {'url': url, 'device_name': self.get_device_name()}
         email = '\n'.join(self.translate_template('debug.email', data))
         title = self.translate('debug.title')
         self.send_email(title, email)
 
-        token = (url.replace('http://', '').replace(self.host, '').strip('/').
+        token = (url.replace('http://', '').replace(self.host, '').strip('/')
                     .strip(u"\u0000").strip())
         verbal_str = (self.host.replace('.', ' dot ') +
                       ' slash ' +
