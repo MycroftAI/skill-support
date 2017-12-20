@@ -95,8 +95,8 @@ class SupportSkill(MycroftSkill):
         title = self.translate('debug.title')
         self.send_email(title, email)
 
-        token = (url.replace('http://', '').replace(self.host, '').strip('/').
-                    .strip(u"\u0000").strip())
+        token = (url.replace('http://', '').replace(self.host, '').strip('/')
+                 .strip(u"\u0000").strip())
         verbal_str = (self.host.replace('.', ' dot ') +
                       ' slash ' +
                       ', '.join(token))
