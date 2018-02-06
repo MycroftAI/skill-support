@@ -1,0 +1,6 @@
+<p>Hier finden Sie alle Informationen von Ihrem Gerät:</p>
+
+<ul><tt>
+<p><b>Gerätename:</b> {{device_name}}</p>
+<p><b>Logs:</b> <a href='{{url}}'>{{url}}</a></p>
+</tt></ul>
