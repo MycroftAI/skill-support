@@ -12,15 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from subprocess import Popen, PIPE, check_output
-
 from glob import glob
+from subprocess import check_output
 from tempfile import mkstemp
-from time import sleep
+from threading import Thread
 
 import os
 from os.path import dirname, join
-from threading import Thread
 
 import mycroft
 from mycroft import MycroftSkill, intent_file_handler
@@ -50,7 +48,8 @@ class SupportSkill(MycroftSkill):
         with open(path, 'w') as f:
             f.write(log_str)
         os.close(fd)
-        return check_output('cat ' + path + ' | nc ' + self.host + ' 9999', shell=True).decode().strip('\n\x00')
+        cmd = 'cat ' + path + ' | nc ' + self.host + ' 9999'
+        return check_output(cmd, shell=True).decode().strip('\n\x00')
 
     def get_device_name(self):
         try:
@@ -75,6 +74,7 @@ class SupportSkill(MycroftSkill):
                     lines.extend(log_lines)
                 lines.append('')
                 all_lines.extend(lines)
+
             t = Thread(target=do_thing)
             t.daemon = True
             t.start()
@@ -83,28 +83,27 @@ class SupportSkill(MycroftSkill):
             t.join()
         return self.upload_and_create_url('\n'.join(all_lines))
 
-    # "You're not working!"
-    @intent_file_handler('maybe.troubleshoot.intent')
-    def maybe_troubleshoot(self):
-        should_troubleshoot = self.get_response('ask.troubleshoot')
+    # "Create a support ticket"
+    @intent_file_handler('contact.support.intent')
+    def troubleshoot(self):
+        # Get a problem description from the user
+        user_words = self.get_response('confirm.support', num_retries=0)
+
         yes_words = self.translate_list('yes')
 
         # TODO: .strip() shouldn't be needed, translate_list should remove
         #       the '\r' I'm seeing.  Remove after bugfix.
-        if (should_troubleshoot and
-                any(i.strip() in should_troubleshoot for i in yes_words)):
-            self.troubleshoot()
-        else:
+        if (not user_words or not any(
+                i.strip() in user_words for i in yes_words
+        )):
             self.speak_dialog('cancelled')
+            return
 
-    # "Create a support ticket"
-    @intent_file_handler('troubleshoot.intent')
-    def troubleshoot(self):
-        # Get a problem description from the user
-        description = self.get_response('ask.description')
+        description = self.get_response('ask.description', num_retries=0)
         if description is None:
             self.speak_dialog('cancelled')
             return
+
         self.speak_dialog('one.moment')
 
         # Log so that the message will appear in the package of logs sent
@@ -120,26 +119,7 @@ class SupportSkill(MycroftSkill):
         email = '\n'.join(self.translate_template('support.email', data))
         title = self.translate('support.title')
         self.send_email(title, email)
-        self.speak_dialog('troubleshoot')
-
-    # "Email me debug info"
-    @intent_file_handler('send.debug.info.intent')
-    def send_debug_info(self):
-        self.speak_dialog('one.moment')
-        # Upload the logs to the web
-        url = self.upload_debug_info()
-        # Create the debug email and send to user
-        data = {'url': url, 'device_name': self.get_device_name()}
-        email = '\n'.join(self.translate_template('debug.email', data))
-        title = self.translate('debug.title')
-        self.send_email(title, email)
-
-        token = (url.replace('http://', '').replace(self.host, '').strip('/')
-                    .strip(u"\u0000").strip())
-        verbal_str = (self.host.replace('.', ' dot ') +
-                      ' slash ' +
-                      ', '.join(token))
-        self.speak_dialog('uploaded', {'url': verbal_str})
+        self.speak_dialog('complete')
 
 
 def create_skill():
