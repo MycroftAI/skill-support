@@ -49,7 +49,7 @@ class SupportSkill(MycroftSkill):
             f.write(log_str)
         os.close(fd)
         cmd = 'cat ' + path + ' | nc ' + self.host + ' 9999'
-        return check_output(cmd, shell=True).decode().strip('\n\x00')
+        return check_output(cmd, shell=True).strip('\n\x00')
 
     def get_device_name(self):
         try:
