@@ -1,5 +1,5 @@
 # <img src='https://rawgithub.com/FortAwesome/Font-Awesome/master/advanced-options/raw-svg/solid/life-ring.svg' card_color='#FD8E4C' width='50' height='50' style='vertical-align:bottom'/> Support
-Generate log and status information that can be emailed to Mycroft to create a support ticket
+Capture information for Mycroft support
 
 ## About 
 This Skill generates a package with debugging information and emails it to the email address registered in your [home.mycroft.ai](https://home.mycroft.ai) account. This package can be used for debugging issues yourself, or alternatively it can be emailed to Mycroft to create a support request. 
@@ -26,3 +26,4 @@ Mycroft AI (@MycroftAI)
 #assistance
 #logs
 #troubleshooting
+#system
