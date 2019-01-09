@@ -1,4 +1,4 @@
-# <img src='https://rawgithub.com/FortAwesome/Font-Awesome/master/advanced-options/raw-svg/solid/life-ring.svg' card_color='#FD8E4C' width='50' height='50' style='vertical-align:bottom'/> Support
+# <img src='https://raw.githack.com/FortAwesome/Font-Awesome/master/svgs/solid/life-ring.svg' card_color='#FD8E4C' width='50' height='50' style='vertical-align:bottom'/> Support
 Capture information for Mycroft support
 
 ## About 
