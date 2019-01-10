@@ -29,7 +29,7 @@ class SupportSkill(MycroftSkill):
     # TODO: Will need to read from config under KDE, etc.
     log_locations = [
         '/opt/mycroft/*.json',
-        '/var/log/mycroft-*.log',
+        '/var/log/mycroft/*.log',
         '/etc/mycroft/*.conf',
         join(dirname(dirname(mycroft.__file__)), 'scripts', 'logs', '*.log')
     ]
