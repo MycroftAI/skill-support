@@ -50,9 +50,6 @@ class SupportSkill(MycroftSkill):
                     log_files.append(fn)
         return log_files
 
-    def __init__(self):
-        MycroftSkill.__init__(self)
-
     def upload_and_create_url(self, log_str):
         # Send the various log and info files
         # Upload to termbin.com using the nc (netcat) util
