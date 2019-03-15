@@ -3,6 +3,14 @@
 <ul><tt>
 <p><b>Device Name:</b> {{device_name}}</p>
 <p><b>Description:</b> {{description}}</p>
+<br>
+<p>
+    This package consists of a zip file containing the following: <br>
+     - An audio sample of the description to verify microphone functionality <br>
+     - All most recent logs from the device <br>
+     - All configuration files
+</p>
+<br>
 <a href='{{url}}'>{{url}}</a>
 </tt></ul>
 

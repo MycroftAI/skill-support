@@ -12,17 +12,71 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from os import chdir
+
+import shutil
 from glob import glob
-from subprocess import check_output
-from tempfile import mkstemp
-from threading import Thread
+from subprocess import check_output, call, SubprocessError
+from tempfile import mkstemp, mkdtemp
+from threading import Thread, Event
 
 import os
-from os.path import dirname, join, isfile
+from os.path import dirname, join, isfile, basename
+import requests
 
 import mycroft
 from mycroft import MycroftSkill, intent_file_handler
 from mycroft.api import DeviceApi
+
+import pyaudio
+import wave
+
+
+class AudioRecorder:
+    def __init__(self, **params):
+        params.setdefault('format', pyaudio.paInt16)
+        params.setdefault('channels', 1)
+        params.setdefault('rate', 16000)
+        params.setdefault('frames_per_buffer', 1024)
+        self.audio = pyaudio.PyAudio()
+        self.stream = self.audio.open(input=True, **params)
+        self.params = params
+        self.frames = []
+
+    def update(self):
+        self.frames.append(self.stream.read(self.params['frames_per_buffer']))
+
+    def stop(self):
+        if not self.stream.is_stopped():
+            self.stream.stop_stream()
+            self.stream.close()
+            self.audio.terminate()
+
+    def save(self, filename):
+        self.stop()
+        with wave.open(filename, 'wb') as wf:
+            wf.setnchannels(self.params['channels'])
+            wf.setsampwidth(self.audio.get_sample_size(self.params['format']))
+            wf.setframerate(self.params['rate'])
+            wf.writeframes(b''.join(self.frames))
+
+
+class ThreadedRecorder(Thread, AudioRecorder):
+    def __init__(self, daemon=False, **params):
+        Thread.__init__(self, daemon=daemon)
+        AudioRecorder.__init__(self, **params)
+        self.stop_event = Event()
+        self.start()
+
+    def run(self):
+        while not self.stop_event.is_set():
+            self.update()
+
+    def stop(self):
+        if self.is_alive():
+            self.stop_event.set()
+            self.join()
+            AudioRecorder.stop(self)
 
 
 class SupportSkill(MycroftSkill):
@@ -50,15 +104,31 @@ class SupportSkill(MycroftSkill):
                     log_files.append(fn)
         return log_files
 
-    def upload_and_create_url(self, log_str):
-        # Send the various log and info files
-        # Upload to termbin.com using the nc (netcat) util
-        fd, path = mkstemp()
-        with open(path, 'w') as f:
-            f.write(log_str)
-        os.close(fd)
-        cmd = 'cat ' + path + ' | nc ' + self.host + ' 9999'
-        return check_output(cmd, shell=True).decode().strip('\n\x00')
+    def create_debug_package(self, extra_files=None):
+        fd, name = mkstemp(suffix='.tgz')
+        tmp_folder = mkdtemp()
+        tar_files = []
+        for file in self.get_log_files() + (extra_files or []):
+            tar_name = file.strip('/').replace('/', '.')
+            tmp_file = join(tmp_folder, tar_name)
+            shutil.copy(file, tmp_file)
+            tar_files.append(tar_name)
+
+        chdir(tmp_folder)
+        try:
+            check_output(['tar', 'caf', name] + tar_files)
+        except SubprocessError as e:
+            self.log.warning('Failed to create debug package: {}'.format(e))
+            return None
+        return name
+
+    def upload_file(self, filename):
+        with open(filename, 'rb') as f:
+            r = requests.post('https://0x0.st', files={'file': f})
+        if r.status_code != 200:
+            self.log.warning('Failed to post logs: {}'.format(r.text))
+            return ''
+        return r.text.strip()
 
     def get_device_name(self):
         try:
@@ -67,31 +137,14 @@ class SupportSkill(MycroftSkill):
             self.log.exception('API Error')
             return ':error:'
 
-    def upload_debug_info(self):
-        all_lines = []
-        threads = []
-
-        for log_file in self.get_log_files():
-            def do_thing(log_file=log_file):
-                with open(log_file) as f:
-                    log_lines = f.read().split('\n')
-                lines = ['=== ' + log_file + ' ===']
-                if len(log_lines) > 100:
-                    log_lines = '\n'.join(log_lines[-5000:])
-                    print('Uploading ' + log_file + '...')
-                    lines.append(self.upload_and_create_url(log_lines))
-                else:
-                    lines.extend(log_lines)
-                lines.append('')
-                all_lines.extend(lines)
-
-            t = Thread(target=do_thing)
-            t.daemon = True
-            t.start()
-            threads.append(t)
-        for t in threads:
-            t.join()
-        return self.upload_and_create_url('\n'.join(all_lines))
+    def upload_debug_package(self, extra_files=None):
+        package_fn = self.create_debug_package(extra_files)
+        if not package_fn:
+            return None
+        url = self.upload_file(package_fn)
+        if not url:
+            return None
+        return url
 
     # "Create a support ticket"
     @intent_file_handler('contact.support.intent')
@@ -109,10 +162,16 @@ class SupportSkill(MycroftSkill):
             self.speak_dialog('cancelled')
             return
 
+        recorder = ThreadedRecorder()
         description = self.get_response('ask.description', num_retries=0)
+        recorder.stop()
+
         if description is None:
             self.speak_dialog('cancelled')
             return
+
+        fd, audio_file = mkstemp(suffix='.wav')
+        recorder.save(audio_file)
 
         self.speak_dialog('one.moment')
 
@@ -121,11 +180,16 @@ class SupportSkill(MycroftSkill):
                        str(description))
 
         # Upload the logs to the web
-        url = self.upload_debug_info()
+        url = self.upload_debug_package([audio_file])
+        if not url:
+            self.speak_dialog('upload.failed')
+            return  # Something failed creating package. More info in logs
 
         # Create the troubleshooting email and send to user
-        data = {'url': url, 'device_name': self.get_device_name(),
-                'description': description}
+        data = {
+            'url': url, 'device_name': self.get_device_name(),
+            'description': description
+        }
         email = '\n'.join(self.translate_template('support.email', data))
         title = self.translate('support.title')
         self.send_email(title, email)
