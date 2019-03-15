@@ -18,7 +18,7 @@ from tempfile import mkstemp
 from threading import Thread
 
 import os
-from os.path import dirname, join
+from os.path import dirname, join, isfile
 
 import mycroft
 from mycroft import MycroftSkill, intent_file_handler
@@ -33,10 +33,22 @@ class SupportSkill(MycroftSkill):
         '/etc/mycroft/*.conf',
         join(dirname(dirname(mycroft.__file__)), 'scripts', 'logs', '*.log')
     ]
+    log_types = ['audio', 'bus', 'enclosure', 'skills', 'update', 'voice']
 
     # Service used to temporarilly hold the debugging data (linked to
     # via email)
     host = 'termbin.com'
+
+    def get_log_files(self):
+        log_files = sum([glob(pattern) for pattern in self.log_locations], [])
+        for i in self.log_locations:
+            for log_type in self.log_types:
+                fn = i.replace('*', log_type)
+                if fn in log_files:
+                    continue
+                if isfile(fn):
+                    log_files.append(fn)
+        return log_files
 
     def __init__(self):
         MycroftSkill.__init__(self)
@@ -61,7 +73,8 @@ class SupportSkill(MycroftSkill):
     def upload_debug_info(self):
         all_lines = []
         threads = []
-        for log_file in sum([glob(pattern) for pattern in self.log_locations], []):
+
+        for log_file in self.get_log_files():
             def do_thing(log_file=log_file):
                 with open(log_file) as f:
                     log_lines = f.read().split('\n')
