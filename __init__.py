@@ -163,7 +163,8 @@ class SupportSkill(MycroftSkill):
             self.speak_dialog('cancelled')
             return
 
-        recorder = ThreadedRecorder()
+        sr = self.config_core['listener']['sample_rate']
+        recorder = ThreadedRecorder(rate=sr)
         description = self.get_response('ask.description', num_retries=0)
         recorder.stop()
 
