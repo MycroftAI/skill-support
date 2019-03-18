@@ -16,13 +16,12 @@ from os import chdir
 
 import shutil
 from glob import glob
-from subprocess import check_output, call, SubprocessError
 from tempfile import mkstemp, mkdtemp
 from threading import Thread, Event
 
-import os
-from os.path import dirname, join, isfile, basename
+from os.path import dirname, join, isfile
 import requests
+from zipfile import ZipFile, ZIP_DEFLATED
 
 import mycroft
 from mycroft import MycroftSkill, intent_file_handler
@@ -105,19 +104,21 @@ class SupportSkill(MycroftSkill):
         return log_files
 
     def create_debug_package(self, extra_files=None):
-        fd, name = mkstemp(suffix='.tgz')
+        fd, name = mkstemp(suffix='.zip')
         tmp_folder = mkdtemp()
-        tar_files = []
+        zip_files = []
         for file in self.get_log_files() + (extra_files or []):
             tar_name = file.strip('/').replace('/', '.')
             tmp_file = join(tmp_folder, tar_name)
             shutil.copy(file, tmp_file)
-            tar_files.append(tar_name)
+            zip_files.append(tar_name)
 
         chdir(tmp_folder)
         try:
-            check_output(['tar', 'caf', name] + tar_files)
-        except SubprocessError as e:
+            with ZipFile(name, 'w', ZIP_DEFLATED) as zf:
+                for fn in zip_files:
+                    zf.write(fn)
+        except OSError as e:
             self.log.warning('Failed to create debug package: {}'.format(e))
             return None
         return name
