@@ -9,4 +9,5 @@ def test_runner(skill, example, emitter, loader, m1):
 
     m1.side_effect = side_effect
     s = [s for s in loader.skills if s and s.root_dir == skill][0]
-    return SkillTest(skill, example, emitter).run(loader)
+    with mock.patch(s.__module__ + '.ThreadedRecorder') as m2:
+        return SkillTest(skill, example, emitter).run(loader)
