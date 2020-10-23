@@ -24,7 +24,7 @@ import requests
 from zipfile import ZipFile, ZIP_DEFLATED
 
 import mycroft
-from mycroft import MycroftSkill, intent_file_handler
+from mycroft import MycroftSkill, intent_handler
 from mycroft.api import DeviceApi
 
 import pyaudio
@@ -148,7 +148,7 @@ class SupportSkill(MycroftSkill):
         return url
 
     # "Create a support ticket"
-    @intent_file_handler('contact.support.intent')
+    @intent_handler('contact.support.intent')
     def troubleshoot(self):
         # Get a problem description from the user
         user_words = self.get_response('confirm.support', num_retries=0)
