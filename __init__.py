@@ -88,10 +88,6 @@ class SupportSkill(MycroftSkill):
     ]
     log_types = ['audio', 'bus', 'enclosure', 'skills', 'update', 'voice']
 
-    # Service used to temporarilly hold the debugging data (linked to
-    # via email)
-    host = 'termbin.com'
-
     def get_log_files(self):
         log_files = sum([glob(pattern) for pattern in self.log_locations], [])
         for i in self.log_locations:
