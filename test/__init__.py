@@ -1,6 +1,6 @@
 from test.integrationtests.skills.skill_tester import SkillTest
 
-import mock
+from unittest import mock
 
 
 @mock.patch('mycroft.skills.mycroft_skill.mycroft_skill.DeviceApi.send_email')
