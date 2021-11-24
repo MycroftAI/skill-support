@@ -29,13 +29,9 @@ class SupportSkill(MycroftSkill):
     @intent_handler("contact.support.intent")
     def troubleshoot(self):
         # Get a problem description from the user
-        user_words = self.get_response("confirm.support", num_retries=0)
+        confirmation = self.ask_yesno("confirm.support")
 
-        yes_words = self.translate_list("yes")
-
-        # TODO: .strip() shouldn't be needed, translate_list should remove
-        #       the '\r' I'm seeing.  Remove after bugfix.
-        if not user_words or not any(i.strip() in user_words for i in yes_words):
+        if confirmation != "yes":
             self.speak_dialog("cancelled")
             return
 
