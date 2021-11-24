@@ -14,6 +14,7 @@
 #
 
 from mycroft.api import DeviceApi
+from mycroft.identity import IdentityManager
 from mycroft.util import LOG
 
 
@@ -23,3 +24,19 @@ def get_device_name():
     except Exception as err:
         LOG.exception("API Error", err)
         return ":error:"
+
+
+def get_mycroft_uuid():
+    """Get the UUID of a Mycroft device paired with the Mycroft backend."""
+    identity = IdentityManager.get()
+    return identity.uuid
+
+
+def get_pantacor_device_id():
+    """Get the Pantacor device-id for devices using the Pantacor update system."""
+    # Import within function as it doesn't exist on non-Mark II devices.
+    from mycroft.api import _get_pantacor_device_id
+
+    # TODO this uses the temporary solution in the feature/mark-2 branch.
+    # It should be replaced when a better solution is available.
+    return _get_pantacor_device_id()

@@ -2,6 +2,8 @@
 
 <ul><tt>
 <p><b>Device Name:</b> {{device_name}}</p>
+<p><b>Device Name:</b> {{device_uuid}}</p>
+{{pantacor_id}}
 <p><b>Description:</b> {{description}}</p>
 <br>
 <p>

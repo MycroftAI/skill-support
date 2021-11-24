@@ -19,7 +19,7 @@ from mycroft import MycroftSkill, intent_handler
 
 from .skill.audio_recorder import ThreadedRecorder
 from .skill.debug_package import create_debug_package
-from .skill.device_id import get_device_name
+from .skill.device_id import get_device_name, get_mycroft_uuid, get_pantacor_device_id
 from .skill.upload import upload_debug_package
 
 
@@ -64,12 +64,23 @@ class SupportSkill(MycroftSkill):
         data = {
             "url": url,
             "device_name": get_device_name(),
+            "device_uuid": get_mycroft_uuid(),
+            "pantacor_id": "",
             "description": description,
         }
+        if self.is_pantacor_device:
+            pantacor_id = get_pantacor_device_id()
+            data["pantacor_id"] = f"<p><b>Pantacor ID:</b> {pantacor_id}</p>"
         email = "\n".join(self.translate_template("support.email", data))
         title = self.translate("support.title")
         self.send_email(title, email)
         self.speak_dialog("complete")
+
+    @property
+    def is_pantacor_device(self) -> bool:
+        """Check if current device is using Pantacor"""
+        packaging_type = self.config_core["enclosure"].get("packaging_type", "unknown")
+        return packaging_type == "pantacor"
 
 
 def create_skill():
